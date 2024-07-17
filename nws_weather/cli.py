@@ -1,7 +1,7 @@
 
 import json
 from nws_weather.api import discussion_for_point, forecast_for_point, forecast_index_for_point, hourly_forecast_for_point
-from nws_weather.config import add_place_wizard, add_place_wizard_auto, get_lat_lon
+from nws_weather.config import add_place_wizard_auto, get_lat_lon
 
 import argparse
 
