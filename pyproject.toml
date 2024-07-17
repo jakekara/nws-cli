@@ -1,0 +1,17 @@
+[project]
+
+name = "nws-weather"
+
+version = "0.0.1"
+
+description = "NWS Weather Client"
+
+dependencies = [
+    "requests>=2"
+]
+
+[project.scripts]
+nws = "nws_weather.cli:main"
+
+[tool.setuptools]
+py-modules = ["nws_weather"]
