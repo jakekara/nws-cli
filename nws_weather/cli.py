@@ -1,10 +1,11 @@
 
 import json
 from nws_weather.api import discussion_for_point, forecast_for_point, forecast_index_for_point, hourly_forecast_for_point
-from nws_weather.config import add_place_wizard, get_lat_lon
-from nws_weather.sample_data import BETHEL_CT
+from nws_weather.config import add_place_wizard, add_place_wizard_auto, get_lat_lon
 
 import argparse
+
+from nws_weather.geocoder import geocode_census
 
 def main():
    parser = argparse.ArgumentParser(
@@ -23,17 +24,30 @@ def main():
    discussion.set_defaults(func=discussion_text)
 
 
-   discussion = subparsers.add_parser("set-location")
-   discussion.set_defaults(func=add_place_wizard)
-   args = parser.parse_args()
+   discussion = subparsers.add_parser("wizard")
+   discussion.set_defaults(func=call_the_wizard)
 
+   geocode = subparsers.add_parser("geocode")
+   geocode.add_argument("street")
+   geocode.add_argument("city")
+   geocode.add_argument("state")
+   geocode.set_defaults(func=location_lookup)
+
+   args = parser.parse_args()
    args.func(args)
+
+
+def call_the_wizard(args):
+   add_place_wizard_auto()
+
+
+def location_lookup(args):
+   print(json.dumps(geocode_census(args.street, args.city, args.state), indent=2))
 
 def forecast_index():
   
-  coords = get_lat_lon()
   print(json.dumps(
-        forecast_index_for_point(coords["latitude"], coords["longitude"]),
+        forecast_index_for_point(**get_lat_lon()),
         indent=2
         ))
   
