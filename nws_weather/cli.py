@@ -1,7 +1,7 @@
 
 import json
 from nws_weather.api import discussion_for_point, forecast_for_point, forecast_index_for_point, hourly_forecast_for_point
-from nws_weather.config import add_place_wizard_auto, get_lat_lon
+from nws_weather.config import add_place_wizard, get_config, get_lat_lon
 
 import argparse
 
@@ -9,8 +9,11 @@ from nws_weather.geocoder import geocode_census
 
 def main():
    parser = argparse.ArgumentParser(
-      description="Simple NWS weather reader"
+      description="National Weather Service Command Line Interface"
    )
+
+   parser.add_argument("--location", default="default")
+   parser.set_defaults(func=parser.print_help)
 
    subparsers = parser.add_subparsers(help="subcommand help")
 
@@ -23,9 +26,12 @@ def main():
    discussion = subparsers.add_parser("discussion")
    discussion.set_defaults(func=discussion_text)
 
-
    discussion = subparsers.add_parser("wizard")
    discussion.set_defaults(func=call_the_wizard)
+
+   list_config = subparsers.add_parser("ls")
+   list_config.set_defaults(func=list_places)
+
 
    geocode = subparsers.add_parser("geocode")
    geocode.add_argument("street")
@@ -34,11 +40,16 @@ def main():
    geocode.set_defaults(func=location_lookup)
 
    args = parser.parse_args()
-   args.func(args)
+   args.func(vars(args))
 
+def list_places(args):
+   config = get_config()
+
+   for section in config.sections():
+      print(f"{section}")
 
 def call_the_wizard(args):
-   add_place_wizard_auto()
+   add_place_wizard()
 
 
 def location_lookup(args):
@@ -54,7 +65,7 @@ def forecast_index():
 
 
 def hourly_forecast(args):
-   data = hourly_forecast_for_point(**get_lat_lon())
+   data = hourly_forecast_for_point(**get_lat_lon(**args))
 
    for period in data["properties"]["periods"][:24]:
       print(period["startTime"] + ": " + period["shortForecast"] + " T:" + str(period["temperature"]) + "F " + "H:" + str(period["relativeHumidity"]["value"]) + "%")
@@ -74,7 +85,7 @@ def detailed_text_forecast(args):
       print()
 
 def discussion_text(args):
-   data = discussion_for_point(**get_lat_lon())
+   data = discussion_for_point(**get_lat_lon(**args))
    print(data["productName"])
    print(data["issuanceTime"])
    print(data["@id"])
