@@ -1,15 +1,19 @@
 
 import json
 from nws_weather.api import discussion_for_point, forecast_for_point, forecast_index_for_point, hourly_forecast_for_point
-from nws_weather.config import add_place_wizard, get_lat_lon
-from nws_weather.sample_data import BETHEL_CT
+from nws_weather.config import add_place_wizard, get_config, get_lat_lon
 
 import argparse
 
+from nws_weather.geocoder import geocode_census
+
 def main():
    parser = argparse.ArgumentParser(
-      description="Simple NWS weather reader"
+      description="National Weather Service Command Line Interface"
    )
+
+   parser.add_argument("--location", default="default")
+   parser.set_defaults(func=parser.print_help)
 
    subparsers = parser.add_subparsers(help="subcommand help")
 
@@ -22,25 +26,46 @@ def main():
    discussion = subparsers.add_parser("discussion")
    discussion.set_defaults(func=discussion_text)
 
+   discussion = subparsers.add_parser("wizard")
+   discussion.set_defaults(func=call_the_wizard)
 
-   discussion = subparsers.add_parser("set-location")
-   discussion.set_defaults(func=add_place_wizard)
+   list_config = subparsers.add_parser("ls")
+   list_config.set_defaults(func=list_places)
+
+
+   geocode = subparsers.add_parser("geocode")
+   geocode.add_argument("street")
+   geocode.add_argument("city")
+   geocode.add_argument("state")
+   geocode.set_defaults(func=location_lookup)
+
    args = parser.parse_args()
+   args.func(vars(args))
 
-   args.func(args)
+def list_places(args):
+   config = get_config()
+
+   for section in config.sections():
+      print(f"{section}")
+
+def call_the_wizard(args):
+   add_place_wizard()
+
+
+def location_lookup(args):
+   print(json.dumps(geocode_census(args.street, args.city, args.state), indent=2))
 
 def forecast_index():
   
-  coords = get_lat_lon()
   print(json.dumps(
-        forecast_index_for_point(coords["latitude"], coords["longitude"]),
+        forecast_index_for_point(**get_lat_lon()),
         indent=2
         ))
   
 
 
 def hourly_forecast(args):
-   data = hourly_forecast_for_point(**get_lat_lon())
+   data = hourly_forecast_for_point(**get_lat_lon(**args))
 
    for period in data["properties"]["periods"][:24]:
       print(period["startTime"] + ": " + period["shortForecast"] + " T:" + str(period["temperature"]) + "F " + "H:" + str(period["relativeHumidity"]["value"]) + "%")
@@ -60,7 +85,7 @@ def detailed_text_forecast(args):
       print()
 
 def discussion_text(args):
-   data = discussion_for_point(**get_lat_lon())
+   data = discussion_for_point(**get_lat_lon(**args))
    print(data["productName"])
    print(data["issuanceTime"])
    print(data["@id"])

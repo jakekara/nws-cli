@@ -1,45 +1,124 @@
 
 import configparser
 import os
-from textwrap import dedent
 
-from nws_weather.sample_data import BETHEL_CT
+from nws_weather.geocoder import geocode_census
 
-DEFAULT_CONFIG_FILE_PATH="~/.nws-py.config"
+DEFAULT_CONFIG_FILE_PATH=os.path.expanduser("~/.nws.weather.config")
 
-def get_lat_lon(section="default", config_file_path=DEFAULT_CONFIG_FILE_PATH):
+def get_config():
+    config = configparser.ConfigParser()
+    config.read(DEFAULT_CONFIG_FILE_PATH)
+    return config
+
+def get_lat_lon(location="default", **kwargs):
 
     """Load lat on from config file. Default to Bethel, CT as a location if
     none is specified."""
 
     try:
+        config = get_config()
 
-        config = configparser.ConfigParser()
-        config.read(os.path.expanduser(config_file_path))
-
-        lat = config[section]['latitude']
-        lon = config[section]['longitude']
-
-        return {
-            "latitude": lat,
-            "longitude": lon
-        }
-
+        lat = config[location]['latitude']
+        lon = config[location]['longitude']
     except:
-        return BETHEL_CT
+        print(f"Error loading {location} from config.")
+        print("Run `nws wizard` to add a location to your config file.")
+        exit(1)
+    return {
+        "latitude": lat,
+        "longitude": lon
+    }
+
+
+def add_place_wizard():
+
+    """
+    Automated config wizard using census geocoder
+    """
+
+    if not os.path.exists(DEFAULT_CONFIG_FILE_PATH):
+        print(f"Could not find default config file at {DEFAULT_CONFIG_FILE_PATH}. File will be created by this wizard.")
+        with open(DEFAULT_CONFIG_FILE_PATH, "w") as fh:
+            pass
+
+    print("We need to add a default location. Please enter your location.")
+    print("NOTE: Data will be sent to a U.S. Census Bureau API for geocoding.")
+    print()
     
-def add_place_wizard(*args):
-    print(dedent(
-        """
-        Add place wizard not implemented. For now, create a file
-        at ~/.nws-py.config like this:
+    print("type 'q' to quit")
 
-        [default]
-        latitude = 41.3717
-        longitude = -73.4074
+    street = input("Street: ")
+    if street.strip() == "q": return
+    city = input("City: ")
+    if city.strip() == "q": return
+    state = input("State: ")
+    if state.strip() == "q": return
 
-        [somewhere-else]
-        latitude = 42.3717
-        longitude = -73.4074
-        """
-        ))
+    data = geocode_census(street, city, state)
+
+    if "errors" in data:
+        for error in data["errors"]:
+            print(error)
+        return
+
+    matches = data["result"]["addressMatches"]
+
+    if len(matches) < 1:
+        print("Found no matches. Try again.")
+        return add_place_wizard()
+
+    print()
+    print(f"Found {len(matches)} matches. Choose one:")
+
+    for idx, match in enumerate(matches):
+        lat = match["coordinates"]["y"]
+        lon = match["coordinates"]["x"]
+        print(str(idx) + ": " + match["matchedAddress"] + f"({lat}, {lon})")
+
+    print(f"{idx + 1}: None of the above")
+    print()
+    print("Choose one of the addresses above")
+
+    selection = int(input("Selection: "))
+    if selection >= 0 and selection < len(matches):
+        choice = matches[selection]
+    elif selection == (idx + 1):
+        print("You chose none of the above. Goodbye!")
+        return
+    else:
+        print("Invalid selection. Goodbye!")
+
+    print(f"You chose: {choice['matchedAddress']}")
+    print("Let's set up your config file")
+
+    config = configparser.ConfigParser()
+    config.read(DEFAULT_CONFIG_FILE_PATH)
+
+    sections = config.sections()
+    if len(sections) > 0:
+        print()
+        print("Found the following places in your config file:")
+        print("\n".join(sections))
+
+    default = input("Do you want to make this the default location? (y/Y) ").lower() == "y"
+
+    latitude = choice["coordinates"]["y"]
+    longitude = choice["coordinates"]["x"]
+
+    if default:
+        section_name = "default"
+    else:
+        print()
+        section_name = input("Please enter a name for this location: ")
+
+    config[section_name] = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "address": match["matchedAddress"]
+    }
+
+    with open(DEFAULT_CONFIG_FILE_PATH, "w") as fh:
+        config.write(fh)
+
+    print("Choices saved!")
