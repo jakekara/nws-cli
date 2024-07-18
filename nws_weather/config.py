@@ -1,56 +1,45 @@
 
 import configparser
 import os
-from textwrap import dedent
 
 from nws_weather.geocoder import geocode_census
-from nws_weather.sample_data import BETHEL_CT
 
-DEFAULT_CONFIG_FILE_PATH="~/.nws-py.config"
+DEFAULT_CONFIG_FILE_PATH=os.path.expanduser("~/.nws.weather.config")
 
-def get_lat_lon(section="default", config_file_path=DEFAULT_CONFIG_FILE_PATH):
+def get_config():
+    config = configparser.ConfigParser()
+    config.read(DEFAULT_CONFIG_FILE_PATH)
+    return config
+
+def get_lat_lon(location="default", **kwargs):
 
     """Load lat on from config file. Default to Bethel, CT as a location if
     none is specified."""
 
     try:
+        config = get_config()
 
-        config = configparser.ConfigParser()
-        config.read(os.path.expanduser(config_file_path))
-
-        lat = config[section]['latitude']
-        lon = config[section]['longitude']
-
-        return {
-            "latitude": lat,
-            "longitude": lon
-        }
-
+        lat = config[location]['latitude']
+        lon = config[location]['longitude']
     except:
-        return BETHEL_CT
-    
-def add_place_wizard(*args):
-    print(dedent(
-        """
-        Add place wizard not implemented. For now, create a file
-        at ~/.nws-py.config like this:
+        print(f"Error loading {location} from config.")
+        print("Run `nws wizard` to add a location to your config file.")
+        exit(1)
+    return {
+        "latitude": lat,
+        "longitude": lon
+    }
 
-        [default]
-        latitude = 41.3717
-        longitude = -73.4074
 
-        [somewhere-else]
-        latitude = 42.3717
-        longitude = -73.4074
-        """
-        ))
-    
+def add_place_wizard():
 
-def add_place_wizard_auto():
+    """
+    Automated config wizard using census geocoder
+    """
 
-    if not os.path.exists(os.path.expanduser(DEFAULT_CONFIG_FILE_PATH)):
+    if not os.path.exists(DEFAULT_CONFIG_FILE_PATH):
         print(f"Could not find default config file at {DEFAULT_CONFIG_FILE_PATH}. File will be created by this wizard.")
-        with open(os.path.expanduser(DEFAULT_CONFIG_FILE_PATH), "w") as fh:
+        with open(DEFAULT_CONFIG_FILE_PATH, "w") as fh:
             pass
 
     print("We need to add a default location. Please enter your location.")
@@ -77,7 +66,7 @@ def add_place_wizard_auto():
 
     if len(matches) < 1:
         print("Found no matches. Try again.")
-        return add_place_wizard_auto()
+        return add_place_wizard()
 
     print()
     print(f"Found {len(matches)} matches. Choose one:")
@@ -104,7 +93,7 @@ def add_place_wizard_auto():
     print("Let's set up your config file")
 
     config = configparser.ConfigParser()
-    config.read(os.path.expanduser(DEFAULT_CONFIG_FILE_PATH))
+    config.read(DEFAULT_CONFIG_FILE_PATH)
 
     sections = config.sections()
     if len(sections) > 0:
@@ -129,7 +118,7 @@ def add_place_wizard_auto():
         "address": match["matchedAddress"]
     }
 
-    with open(os.path.expanduser(DEFAULT_CONFIG_FILE_PATH), "w") as fh:
+    with open(DEFAULT_CONFIG_FILE_PATH, "w") as fh:
         config.write(fh)
 
     print("Choices saved!")
