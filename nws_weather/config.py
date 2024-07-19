@@ -1,3 +1,4 @@
+"""Configuration utils"""
 
 import configparser
 import os
@@ -7,14 +8,18 @@ from nws_weather.geocoder import geocode_census
 DEFAULT_CONFIG_FILE_PATH=os.path.expanduser("~/.nws.weather.config")
 
 def get_config():
+    """Get a ConfigParser"""
+    
     config = configparser.ConfigParser()
     config.read(DEFAULT_CONFIG_FILE_PATH)
     return config
 
 def get_lat_lon(location="default", **kwargs):
 
-    """Load lat on from config file. Default to Bethel, CT as a location if
-    none is specified."""
+    """
+    Load lat on from config file. Warns to use nws wizard
+    if no config is found
+    """
 
     try:
         config = get_config()
