@@ -1,6 +1,8 @@
 
+"""Command-line utility"""
+
 import json
-from nws_weather.api import discussion_for_point, forecast_for_point, forecast_index_for_point, hourly_forecast_for_point
+from nws_weather.api import discussion_for_point, forecast_for_point, index_for_point, hourly_forecast_for_point
 from nws_weather.config import add_place_wizard, get_config, get_lat_lon
 
 import argparse
@@ -8,6 +10,12 @@ import argparse
 from nws_weather.geocoder import geocode_census
 
 def main():
+   
+   """Entrypoint for `nws` package script
+   
+   Sets up argument parser, subcommands
+   """
+
    parser = argparse.ArgumentParser(
       description="National Weather Service Command Line Interface"
    )
@@ -42,49 +50,49 @@ def main():
    args = parser.parse_args()
    args.func(vars(args))
 
+
 def list_places(args):
+   """nws ls subcommand"""
+
    config = get_config()
 
    for section in config.sections():
       print(f"{section}")
 
+
 def call_the_wizard(args):
+   """nws wizard subcommand"""
+
    add_place_wizard()
 
 
 def location_lookup(args):
-   print(json.dumps(geocode_census(args.street, args.city, args.state), indent=2))
+   """nws geocode subcommand"""
 
-def forecast_index():
-  
-  print(json.dumps(
-        forecast_index_for_point(**get_lat_lon()),
-        indent=2
-        ))
-  
+   print(json.dumps(geocode_census(**args), indent=2))
 
 
 def hourly_forecast(args):
+   """nws hourly subcommand"""
+
    data = hourly_forecast_for_point(**get_lat_lon(**args))
 
    for period in data["properties"]["periods"][:24]:
       print(period["startTime"] + ": " + period["shortForecast"] + " T:" + str(period["temperature"]) + "F " + "H:" + str(period["relativeHumidity"]["value"]) + "%")
 
-def forecast():
-   print(json.dumps(
-      forecast_for_point(**get_lat_lon()),
-      indent=2
-   ))
-
 
 def detailed_text_forecast(args):
-   data = forecast_for_point(**get_lat_lon())
+   """nws detailed subcommand"""
+
+   data = forecast_for_point(**get_lat_lon(**args))
    for period in data["properties"]["periods"]:
       print(period["name"])
       print(period["detailedForecast"])
       print()
 
 def discussion_text(args):
+   """nws discussion subcommand"""
+   
    data = discussion_for_point(**get_lat_lon(**args))
    print(data["productName"])
    print(data["issuanceTime"])

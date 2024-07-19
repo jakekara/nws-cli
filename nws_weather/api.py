@@ -1,6 +1,10 @@
+"""Utilities for the National Weather Service API"""
+
 import requests
 
-def forecast_index_for_point(latitude, longitude):
+def index_for_point(latitude, longitude):
+
+    """This has links to other data"""
     
     url = f"https://api.weather.gov/points/{latitude},{longitude}"
 
@@ -10,7 +14,10 @@ def forecast_index_for_point(latitude, longitude):
 
 
 def forecast_for_point(latitude, longitude):
-    index_data = forecast_index_for_point(latitude, longitude)
+
+    """Forecast endpoint data"""
+
+    index_data = index_for_point(latitude, longitude)
 
     url = index_data["properties"]["forecast"]
 
@@ -19,10 +26,11 @@ def forecast_for_point(latitude, longitude):
     ).json()
 
 
-
-
 def hourly_forecast_for_point(latitude, longitude):
-    index_data = forecast_index_for_point(latitude, longitude)
+
+    """Hourly forecast endpoint data"""
+
+    index_data = index_for_point(latitude, longitude)
 
     url = index_data["properties"]["forecastHourly"]
 
@@ -30,8 +38,12 @@ def hourly_forecast_for_point(latitude, longitude):
         url
     ).json()
 
+
 def discussion_for_point(latitude, longitude):
-    index_data = forecast_index_for_point(latitude, longitude)
+
+    """Discussion endpoint data"""
+    
+    index_data = index_for_point(latitude, longitude)
 
     grid_id = index_data["properties"]["gridId"]
     url = f"https://api.weather.gov/products/types/AFD/locations/{grid_id}"
