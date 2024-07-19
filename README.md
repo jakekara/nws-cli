@@ -17,7 +17,13 @@ want without adapting the code.
 Install with
 
 ```shell
+pip install https://codeberg.org/jakekara/nws-weather-cli.git
+# or
 pip install git+https://github.com/jakekara/nws-cli.git
+
+# Pssst: I'm going to try to develop this over on codeberg,
+# so if you're looking at this on GitHub, check there for
+# PRs and stuff.
 ```
 
 Then run the set up wizard to add at least one location.
