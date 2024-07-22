@@ -14,4 +14,4 @@ dependencies = [
 nws = "nws_weather.cli:main"
 
 [tool.setuptools]
-py-modules = ["nws_weather"]
+packages = ["nws_weather"]
