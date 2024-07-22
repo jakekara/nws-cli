@@ -2,3 +2,4 @@ scratch
 scratch
 *.pyc
 *.egg-info
+.nws.weather.config
