@@ -3,3 +3,8 @@ scratch
 *.pyc
 *.egg-info
 .nws.weather.config
+dist
+simple503
+repository
+build
+.env

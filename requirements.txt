@@ -1,1 +1,4 @@
 requests>=2.32.3
+twine==5.1.1
+build==1.2.1
+simple503==0.4.0 

@@ -15,3 +15,8 @@ nws = "nws_weather.cli:main"
 
 [tool.setuptools]
 packages = ["nws_weather"]
+
+[simple503]
+target = "./repository"
+copy = true
+origin = "."
